@@ -329,11 +329,9 @@ public class KTX {
             try {
                 ImageFormat format = ImageFormat.get(vkFormat);
                 if (format.isFloatFormat()) {
-                    return ImageBuffer.createFloatBuffer(getImageFaceAsByteBuffer(0), format, layerCount, faceCount,
-                            new int[] { pixelWidth, pixelHeight, pixelDepth });
+                    return ImageBuffer.createFloatBuffer(getImageFaceAsByteBuffer(0), format, layerCount, faceCount, new int[] { pixelWidth, pixelHeight, pixelDepth });
                 } else {
-                    return ImageBuffer.create(getImageFaceAsByteBuffer(0), ImageFormat.get(vkFormat), layerCount,
-                            faceCount, pixelWidth, pixelHeight, pixelDepth);
+                    return ImageBuffer.create(getImageFaceAsByteBuffer(0), ImageFormat.get(vkFormat), layerCount, faceCount, pixelWidth, pixelHeight, pixelDepth);
                 }
             } catch (DataFormatException e) {
                 throw new RuntimeException(e);

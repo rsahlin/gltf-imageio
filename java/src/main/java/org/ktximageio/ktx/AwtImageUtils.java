@@ -246,13 +246,12 @@ public class AwtImageUtils {
     public static int displayImageWindow(TonemappWindow window, int xpos, int ypos) {
         window.setLocation(xpos, ypos);
         window.setVisible(true);
+        window.paint(window.getGraphics());
         return window.getWidth();
     }
 
-    public static void displayBuffer(ImageBuffer buffer, WindowListener listener,
-            int windowX, int windowY, String... titles) {
-        int screenWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode()
-                .getWidth();
+    public static void displayBuffer(ImageBuffer buffer, WindowListener listener, int windowX, int windowY, String... titles) {
+        int screenWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
         for (int i = 0; i < buffer.faceCount; i++) {
             String title = titles != null && titles.length > i ? titles[i] : "Face " + i;
             TonemappWindow window = new TonemappWindow(title, null, listener);
@@ -269,8 +268,7 @@ public class AwtImageUtils {
         }
     }
 
-    public static void displayBuffer(ImageBuffer buffer, WindowListener listener,
-            String... titles) {
+    public static void displayBuffer(ImageBuffer buffer, WindowListener listener, String... titles) {
         displayBuffer(buffer, listener, 0, 0, titles);
     }
 
@@ -303,6 +301,39 @@ public class AwtImageUtils {
             sourceIndex++;
         }
         return result;
+    }
+
+    /**
+     * Converts RGB/BGR int pixel format to 3 byte format and returns as an array. This simply skipps the highest byte of the int.
+     * 
+     * @param pixels
+     * @return
+     */
+    public static byte[] convertIntRGBtoByteArray(int[] pixels) {
+        byte[] result = new byte[pixels.length * 3];
+        int index = 0;
+        for (int i = 0; i < pixels.length; i++) {
+            int value = pixels[i];
+            result[index++] = (byte) (value & 0x0ff);
+            result[index++] = (byte) ((value >>> 8) & 0x0ff);
+            result[index++] = (byte) ((value >>> 16) & 0x0ff);
+        }
+        return result;
+    }
+
+    /**
+     * Moves the alpha from highest byte to lowest.
+     * 
+     * @param pixels
+     * @return
+     */
+    public static int[] shiftBGRAToABGR(int[] pixels) {
+        for (int i = 0; i < pixels.length; i++) {
+            int val = pixels[i];
+            int alpha = val;
+            pixels[i] = (val << 8) | (alpha >>> 24);
+        }
+        return pixels;
     }
 
 }

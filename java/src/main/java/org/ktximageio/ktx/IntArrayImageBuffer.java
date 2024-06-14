@@ -1,28 +1,25 @@
 package org.ktximageio.ktx;
 
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+import java.nio.IntBuffer;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.ktximageio.ktx.ImageReader.ImageFormat;
 import org.ktximageio.ktx.ImageReader.TransferFunction;
 
-public class ShortArrayImageBuffer extends ImageBuffer {
+public class IntArrayImageBuffer extends ImageBuffer {
 
-    private final short[] arrayBitmap;
+    private int[] arrayBitmap;
 
-    /**
-     * Do NOT use - use static create methods in ImageBuffer
-     */
-    protected ShortArrayImageBuffer(@NonNull short[] bitmap, @NonNull ImageFormat format, int layerCount, int faceCount, int width, int height, int depth) {
+    protected IntArrayImageBuffer(@NonNull int[] bitmap, @NonNull ImageFormat format, int layerCount, int faceCount, int width, int height, int depth) {
         super(null, format, layerCount, faceCount, width, height, depth, TransferFunction.LINEAR);
         arrayBitmap = bitmap;
     }
 
     private void internalCreateBuffer() {
         if (bitmap == null) {
-            createBuffer(arrayBitmap.length * Short.BYTES);
-            ShortBuffer sb = bitmap.asShortBuffer();
+            createBuffer(arrayBitmap.length * Integer.BYTES);
+            IntBuffer sb = bitmap.asIntBuffer();
             sb.put(arrayBitmap);
         }
     }
@@ -40,11 +37,11 @@ public class ShortArrayImageBuffer extends ImageBuffer {
     }
 
     /**
-     * Returns the short array for this image - this is the array specified when creating this image.
+     * Returns the int array for this image - this is the array specified when creating this image.
      * 
      * @return
      */
-    public short[] getAsShortArray() {
+    public int[] getAsIntArray() {
         return arrayBitmap;
     }
 

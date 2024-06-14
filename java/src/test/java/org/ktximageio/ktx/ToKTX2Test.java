@@ -103,8 +103,6 @@ public class ToKTX2Test extends org.ktximageio.ktx.Test {
 
     @Test
     public void testDisplayKTX() throws IOException {
-        // First create ktx to display
-        // ToKTX2 main = new ToKTX2(new String[] { getPath("displayktx"), getPath("wide_street_01_1k.hdr") });
         ToKTX2 main = new ToKTX2(new String[] { "--displayktx", MimeFormat.KTX2.getFilename(getPath("cubemapsdr")) });
         main.run();
         System.out.println("done");
@@ -112,23 +110,13 @@ public class ToKTX2Test extends org.ktximageio.ktx.Test {
 
     @Test
     public void testDisplayKTXCubemap() throws IOException {
-        // ToKTX2 main = new ToKTX2(new String[] { "--displayktx",
-        // "C:\\source\\gltf-rita\\java\\gltf-rita-lwjgl3\\src\\test\\resources\\assets\\gltf\\EnvironmentLight\\EnvironmentLight_images\\hdrcubemap.ktx2"
-        // });
-        // ToKTX2 main = new ToKTX2(new String[] { "--displayktx", getPath("hdrcubemap.ktx2") });
-        ToKTX2 main = new ToKTX2(new String[] { "--displayktx", getPath("chromatic_mini.ktx2") });
+        ToKTX2 main = new ToKTX2(new String[] { "--displayktx", getPath("cubemap.ktx2") });
         main.run();
     }
 
     @Test
     public void testPanoramaToCubemap() throws IOException {
-        // String[] names = {"hdrcubemap", "wide_street_01_1k.hdr"};
-        // String[] names = {"footprint_court", "C:/source/glTF-Sample-Viewer/assets/environments/footprint_court.hdr"};
-        // String[] names = {"cannon_exterior", "C:/source/3DC-Certification/models/Cannon_Exterior.hdr"};
-        // String[] names = {"highres", "C:/Users/richa/Downloads/highres.hdr"};
-        // String[] names = { "studio_05", "C:/Users/richa/OneDrive/Desktop/project/environmentmaps/studio_05.jpg" };
-        // String[] names = { "chromatic_mini", "Chromatic_mini.jpg" };
-        String[] names = { "milkyway1", "C:/Users/richa/OneDrive/Desktop/project/environmentmaps/milkyway1.jpg" };
+        String[] names = { "chromatic_mini", "Chromatic_mini.jpg" };
 
         ToKTX2 main = new ToKTX2(new String[] { "--tocubemap", getPath(names[0]), getPath(names[1]) });
         main.run();

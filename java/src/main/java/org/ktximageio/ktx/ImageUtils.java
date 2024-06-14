@@ -17,8 +17,7 @@ public class ImageUtils {
 
     public enum ImageType {
         TYPE_3BYTE_BGR(5, 3, 3, ImageFormat.VK_FORMAT_B8G8R8_UNORM),
-        TYPE_4BYTE_ABGR(6, 4, 4, ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32,
-                ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32),
+        TYPE_4BYTE_ABGR(6, 4, 4, ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32),
         TYPE_4BYTE_ABGR_PRE(7, 4, 4, ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32),
         TYPE_BYTE_BINARY(12, -1, -1, ImageFormat.VK_FORMAT_UNDEFINED),
         TYPE_BYTE_GRAY(10, 1, 1, ImageFormat.VK_FORMAT_R8_UNORM),
@@ -26,8 +25,8 @@ public class ImageUtils {
         TYPE_CUSTOM(0, -1, -1, ImageFormat.VK_FORMAT_UNDEFINED),
         TYPE_INT_ARGB(2, 4, 4, ImageFormat.VK_FORMAT_UNDEFINED),
         TYPE_INT_ARGB_PRE(3, 4, 4, ImageFormat.VK_FORMAT_UNDEFINED),
-        TYPE_INT_BGR(4, 3, 4, ImageFormat.VK_FORMAT_B8G8R8_UNORM),
-        TYPE_INT_RGB(1, 3, 4, ImageFormat.VK_FORMAT_R8G8B8_UNORM),
+        TYPE_INT_BGR(4, 3, 4, ImageFormat.VK_FORMAT_R8G8B8_UNORM),
+        TYPE_INT_RGB(1, 3, 4, ImageFormat.VK_FORMAT_B8G8R8_UNORM),
         TYPE_USHORT_555_RGB(9, 3, 2, ImageFormat.VK_FORMAT_R5G5B5A1_UNORM_PACK16),
         TYPE_USHORT_565_RGB(8, 3, 2, ImageFormat.VK_FORMAT_R5G6B5_UNORM_PACK16),
         TYPE_USHORT_GRAY(11, 1, 2, ImageFormat.VK_FORMAT_R16_UNORM);
@@ -35,9 +34,9 @@ public class ImageUtils {
         public final int value;
         public final int components;
         public final int sizeInBytes;
-        public final ImageFormat[] format;
+        public final ImageFormat format;
 
-        ImageType(int val, int count, int bytes, @NonNull ImageFormat... format) {
+        ImageType(int val, int count, int bytes, @NonNull ImageFormat format) {
             value = val;
             this.format = format;
             components = count;
@@ -55,10 +54,8 @@ public class ImageUtils {
 
         public static ImageType get(ImageFormat imageFormat) {
             for (ImageType it : values()) {
-                for (ImageFormat f : it.format) {
-                    if (f == imageFormat) {
-                        return it;
-                    }
+                if (it.format == imageFormat) {
+                    return it;
                 }
             }
             return null;
@@ -129,6 +126,41 @@ public class ImageUtils {
             for (int i = offset; i < end; i++) {
                 float val = ((float) (data[i] & 0x0ffff)) / 65536;
                 data[i] = (byte) (Math.pow((val + 0.055f) / 1.055f, GAMMA) * 65536);
+            }
+            lock.release();
+        }
+    }
+
+    /**
+     * Converts SRGB 24 bit (int) values to linear, can be issued using executor for multithreading
+     *
+     */
+    public static class ArrayToLinearRunnableInt extends ArrayToLinearRunnable {
+
+        final int[] data;
+
+        /**
+         * Creates an instance that will convert length bytes at offset within data to linear.
+         * 
+         * @param len
+         * @param offs
+         * @param pixels
+         * @param semaphore The semaphore that will be released when length bytes have been converted.
+         */
+        public ArrayToLinearRunnableInt(int len, int offs, int[] pixels, @NonNull Semaphore semaphore) {
+            super(len, offs, null, semaphore);
+            data = pixels;
+        }
+
+        @Override
+        public void run() {
+            int end = offset + length;
+            for (int i = offset; i < end; i++) {
+                int pixels = data[i];
+                int val1 = (int) (Math.pow(((float) (pixels & 0x0ff) / 255 + 0.055f) / 1.055f, GAMMA) * 255);
+                int val2 = (int) (Math.pow(((float) ((pixels >>> 8) & 0x0ff) / 255 + 0.055f) / 1.055f, GAMMA) * 255);
+                int val3 = (int) (Math.pow(((float) ((pixels >>> 16) & 0x0ff) / 255 + 0.055f) / 1.055f, GAMMA) * 255);
+                data[i] = val1 | (val2 << 8) | (val3 << 16);
             }
             lock.release();
         }

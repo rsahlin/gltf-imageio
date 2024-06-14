@@ -3,7 +3,6 @@ package org.ktximageio.ktx;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
-import org.ktximageio.ktx.ImageBuffer;
 import org.ktximageio.sh.SphericalHarmonics;
 
 public class TestSphericalHarmonics extends org.ktximageio.ktx.Test {
@@ -47,7 +46,7 @@ public class TestSphericalHarmonics extends org.ktximageio.ktx.Test {
     @Test
     public void testSH() throws IOException {
         SphericalHarmonics sh = new SphericalHarmonics();
-        String fileName = getPath("chromatic_mini.ktx2");
+        String fileName = getPath("cubemap.ktx2");
         ImageBuffer cubemap = sh.loadImage(fileName);
         float[][] coefficients = sh.fromCubeMap(cubemap);
     }

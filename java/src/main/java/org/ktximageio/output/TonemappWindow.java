@@ -1,5 +1,6 @@
 package org.ktximageio.output;
 
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Insets;
@@ -96,6 +97,7 @@ public class TonemappWindow extends Frame implements WindowListener {
      */
     public void setImage(BufferedImage img) {
         this.bufferedImage = img;
+        this.setSize(new Dimension(img.getWidth(), img.getHeight()));
     }
 
     @Override

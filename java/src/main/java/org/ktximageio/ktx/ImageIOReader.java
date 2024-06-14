@@ -1,10 +1,13 @@
 package org.ktximageio.ktx;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
 import java.awt.image.DataBufferShort;
 import java.awt.image.DataBufferUShort;
+import java.awt.image.DirectColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.io.FileInputStream;
@@ -105,18 +108,25 @@ public class ImageIOReader implements org.ktximageio.ktx.ImageReader {
         private final int width;
         private final int height;
 
-        private ImageIOHeader(byte[] bitmap, ImageFormat f, int w, int h) {
-            format = f;
-            width = w;
-            height = h;
-            image = ImageBuffer.create(bitmap, f, 1, w, h, TransferFunction.LINEAR);
+        private ImageIOHeader(byte[] bitmap, ImageFormat format, int width, int height) {
+            this.format = format;
+            this.width = width;
+            this.height = height;
+            this.image = ImageBuffer.create(bitmap, format, 1, width, height, TransferFunction.LINEAR);
         }
 
-        private ImageIOHeader(short[] bitmap, ImageFormat f, int w, int h) {
-            format = f;
-            width = w;
-            height = h;
-            image = ImageBuffer.create(bitmap, f, w, h);
+        private ImageIOHeader(short[] bitmap, ImageFormat format, int width, int height) {
+            this.format = format;
+            this.width = width;
+            this.height = height;
+            this.image = ImageBuffer.create(bitmap, format, width, height);
+        }
+
+        private ImageIOHeader(int[] bitmap, ImageFormat format, int width, int height) {
+            this.format = format;
+            this.width = width;
+            this.height = height;
+            this.image = ImageBuffer.create(bitmap, format, width, height);
         }
 
         @Override
@@ -180,32 +190,33 @@ public class ImageIOReader implements org.ktximageio.ktx.ImageReader {
         return read(new ByteBufferInputStream(buffer));
     }
 
-    private ImageHeader read(InputStream stream) throws IOException {
+    ImageHeader read(InputStream stream) throws IOException {
         ImageInputStream iis = ImageIO.createImageInputStream(stream);
         Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
         if (readers.hasNext()) {
             // pick the first available ImageReader
             ImageReader reader = readers.next();
-            // attach source to the reader
-            reader.setInput(iis, true, true);
-            ImageTypeSpecifier rawType = reader.getImageTypes(0).next();
-            if (rawType == null) {
-                throw new IllegalArgumentException("INVALID VALUE, no ImageTypeSpecifier");
-            }
-            BufferedImage sourceImage = reader.read(0);
-            reader.dispose();
-            reader = null;
-            return getPixelsAsArray(sourceImage, rawType);
+            return read(iis, reader);
         }
         return null;
+    }
 
+    ImageHeader read(ImageInputStream iis, ImageReader reader) throws IOException {
+        // attach source to the reader
+        reader.setInput(iis, true, true);
+        ImageTypeSpecifier rawType = reader.getImageTypes(0).next();
+        if (rawType == null) {
+            throw new IllegalArgumentException("INVALID VALUE, no ImageTypeSpecifier");
+        }
+        BufferedImage sourceImage = reader.read(0);
+        reader.dispose();
+        reader = null;
+        return getPixelsAsArray(sourceImage, rawType);
     }
 
     private static final ImageFormat[][] NUM_BANDS_FORMATS = new ImageFormat[][] {
-            { ImageFormat.VK_FORMAT_R8_UNORM, ImageFormat.VK_FORMAT_R8G8_UNORM, ImageFormat.VK_FORMAT_R8G8B8_UNORM,
-                    ImageFormat.VK_FORMAT_R8G8B8A8_UNORM },
-            { ImageFormat.VK_FORMAT_R16_UNORM, ImageFormat.VK_FORMAT_R16G16_UNORM,
-                    ImageFormat.VK_FORMAT_R16G16B16_UNORM, ImageFormat.VK_FORMAT_R16G16B16A16_UNORM }
+            { ImageFormat.VK_FORMAT_R8_UNORM, ImageFormat.VK_FORMAT_R8G8_UNORM, ImageFormat.VK_FORMAT_R8G8B8_UNORM, ImageFormat.VK_FORMAT_R8G8B8A8_UNORM },
+            { ImageFormat.VK_FORMAT_R16_UNORM, ImageFormat.VK_FORMAT_R16G16_UNORM, ImageFormat.VK_FORMAT_R16G16B16_UNORM, ImageFormat.VK_FORMAT_R16G16B16A16_UNORM }
     };
 
     private ImageFormat resolveCustomFormat(ImageTypeSpecifier rawType) {
@@ -217,11 +228,27 @@ public class ImageIOReader implements org.ktximageio.ktx.ImageReader {
                 throw new IllegalArgumentException("Not implemented support for different bits per sample");
             }
         }
+        ColorModel cm = rawType.getColorModel();
         ImageFormat[] formats = null;
         switch (bitsPerSample[0]) {
             case 8:
-                if (rawType.getColorModel().hasAlpha()) {
-                    return NUM_BANDS_FORMATS[0][rawType.getColorModel().getNumComponents() - 1];
+                if (cm instanceof DirectColorModel) {
+                    if (cm.hasAlpha()) {
+                        int redMask = ((DirectColorModel) cm).getRedMask();
+                        int greenMask = ((DirectColorModel) cm).getGreenMask();
+                        int blueMask = ((DirectColorModel) cm).getBlueMask();
+                        int alphaMask = ((DirectColorModel) cm).getAlphaMask();
+                        if (alphaMask < 0 && blueMask == 255) {
+                            return ImageFormat.A8R8G8B8;
+                        }
+                        if (alphaMask == 255 && redMask < 0) {
+                            return ImageFormat.VK_FORMAT_R8G8B8A8_UNORM;
+                        }
+                        if (alphaMask < 0 && redMask == 255) {
+                            return ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+                        }
+                        throw new IllegalArgumentException("Not implemented support for mask: R:" + redMask + ", G: " + greenMask + ", B: " + blueMask + ", A: " + alphaMask);
+                    }
                 }
                 return NUM_BANDS_FORMATS[0][rawType.getColorModel().getNumColorComponents() - 1];
             case 16:
@@ -230,37 +257,46 @@ public class ImageIOReader implements org.ktximageio.ktx.ImageReader {
             case 4:
                 return NUM_BANDS_FORMATS[0][rawType.getColorModel().getNumColorComponents() - 1];
             default:
-                throw new IllegalArgumentException(
-                        "Not implemented support for " + bitsPerSample[0] + " bits per sample");
+                throw new IllegalArgumentException("Not implemented support for " + bitsPerSample[0] + " bits per sample");
         }
         return formats[numOfBands - 1];
+
     }
 
     private ImageHeader getPixelsAsArray(BufferedImage source, ImageTypeSpecifier rawType) {
         long start = System.currentTimeMillis();
         Raster raster = source.getData();
-        ImageFormat format = ImageType.getImageType(source.getType()).format[0];
+        ImageFormat format = ImageType.getImageType(source.getType()).format;
         if (format == ImageFormat.VK_FORMAT_UNDEFINED) {
             format = resolveCustomFormat(rawType);
         }
         if (raster.getTransferType() == DataBuffer.TYPE_BYTE) {
             DataBufferByte dbb = (DataBufferByte) raster.getDataBuffer();
             byte[] byteBuffer = getImageDataAsBytes(source, dbb);
-            System.out.println(
-                    "getPixels to format " + format + ", took " + (System.currentTimeMillis() - start) + " millis");
-            return new ImageIOHeader(byteBuffer, format, source.getWidth(),
-                    source.getHeight());
+            System.out.println("getPixels to format " + format + ", took " + (System.currentTimeMillis() - start) + " millis");
+            return new ImageIOHeader(byteBuffer, format, source.getWidth(), source.getHeight());
         } else if (raster.getTransferType() == DataBuffer.TYPE_SHORT) {
             DataBufferShort shortBuffer = (DataBufferShort) raster.getDataBuffer();
-            return new ImageIOHeader(shortBuffer.getData(), format,
-                    source.getWidth(), source.getHeight());
+            return new ImageIOHeader(shortBuffer.getData(), format, source.getWidth(), source.getHeight());
         } else if (raster.getTransferType() == DataBuffer.TYPE_USHORT) {
             DataBufferUShort shortBuffer = (DataBufferUShort) raster.getDataBuffer();
-            return new ImageIOHeader(shortBuffer.getData(), format,
-                    source.getWidth(), source.getHeight());
+            return new ImageIOHeader(shortBuffer.getData(), format, source.getWidth(), source.getHeight());
+        } else if (raster.getTransferType() == DataBuffer.TYPE_INT) {
+            DataBufferInt intBuffer = (DataBufferInt) raster.getDataBuffer();
+            if (source.getType() == BufferedImage.TYPE_INT_RGB || source.getType() == BufferedImage.TYPE_INT_BGR) {
+                byte[] buffer = AwtImageUtils.convertIntRGBtoByteArray(intBuffer.getData());
+                return new ImageIOHeader(buffer, format, source.getWidth(), source.getHeight());
+            } else {
+                int[] buffer = intBuffer.getData();
+                if (format == ImageFormat.A8R8G8B8) {
+                    AwtImageUtils.shiftBGRAToABGR(buffer);
+                    format = ImageFormat.VK_FORMAT_A8B8G8R8_UNORM_PACK32;
+                }
+                return new ImageIOHeader(buffer, format, source.getWidth(), source.getHeight());
+            }
+
         } else {
-            throw new IllegalArgumentException(
-                    "Not implemented support for DataBuffer type " + raster.getTransferType());
+            throw new IllegalArgumentException("Not implemented support for DataBuffer type " + raster.getTransferType());
         }
     }
 

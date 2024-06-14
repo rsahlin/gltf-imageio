@@ -30,6 +30,15 @@ public class ImageReaderTest extends org.ktximageio.ktx.Test {
     }
 
     @Test
+    public void testWebp() throws IOException, URISyntaxException {
+        // ImageReader reader = ImageReader.getImageReader(MimeFormat.WEBP);
+        // String fileName = getPath("Chromatic_mini.webp");
+        // ImageHeader header = reader.read(Paths.get(fileName));
+        // AwtImageUtils.displayBuffer(header.getData(), null, "Testwebp");
+        assertImage("Chromatic_mini.webp", ImageFormat.VK_FORMAT_B8G8R8_UNORM);
+    }
+
+    @Test
     public void testHDR() throws IOException {
         ImageReader reader = ImageReader.getImageReader(MimeFormat.HDR);
         String filename = getPath("Neutral2.hdr");

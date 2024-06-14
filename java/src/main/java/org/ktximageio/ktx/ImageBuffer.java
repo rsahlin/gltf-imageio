@@ -129,8 +129,7 @@ public class ImageBuffer {
     /**
      * Do NOT use - use static create method
      */
-    protected ImageBuffer(@NonNull ByteBuffer pixels, @NonNull ImageFormat f, int layers, int faces,
-            int w, int h, int d, TransferFunction tf) {
+    protected ImageBuffer(@NonNull ByteBuffer pixels, @NonNull ImageFormat f, int layers, int faces, int w, int h, int d, TransferFunction tf) {
         if (faces <= 0) {
             throw new IllegalArgumentException("Invalid faceCount " + faces);
         }
@@ -148,8 +147,7 @@ public class ImageBuffer {
     /**
      * Do NOT use - use static create method
      */
-    protected ImageBuffer(@NonNull ByteBuffer pixels, @NonNull ImageFormat f, int layers, int faces,
-            int[] dim, TransferFunction tf) {
+    protected ImageBuffer(@NonNull ByteBuffer pixels, @NonNull ImageFormat f, int layers, int faces, int[] dim, TransferFunction tf) {
         if (faces <= 0) {
             throw new IllegalArgumentException("Invalid faceCount " + faces);
         }
@@ -342,14 +340,16 @@ public class ImageBuffer {
      * @param transferFunction If a transfer function has been applied to the bitmap
      * @return
      */
-    public static ImageBuffer create(@NonNull byte[] bitmap, @NonNull ImageFormat format, int faceCount, int width,
-            int height,
-            TransferFunction transferFunction) {
+    public static ImageBuffer create(@NonNull byte[] bitmap, @NonNull ImageFormat format, int faceCount, int width, int height, TransferFunction transferFunction) {
         return new ByteArrayImageBuffer(bitmap, format, 0, faceCount, width, height, 0, transferFunction);
     }
 
     public static ImageBuffer create(@NonNull short[] bitmap, @NonNull ImageFormat format, int width, int height) {
         return new ShortArrayImageBuffer(bitmap, format, 0, 1, width, height, 0);
+    }
+
+    public static ImageBuffer create(@NonNull int[] bitmap, @NonNull ImageFormat format, int width, int height) {
+        return new IntArrayImageBuffer(bitmap, format, 0, 1, width, height, 0);
     }
 
     public static ImageBuffer create(@NonNull ByteBuffer bitmap, @NonNull ImageFormat format, int layerCount,

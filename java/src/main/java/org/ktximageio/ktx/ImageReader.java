@@ -239,7 +239,8 @@ public interface ImageReader {
         VK_FORMAT_ASTC_12x10_UNORM_BLOCK(181, -1, -1),
         VK_FORMAT_ASTC_12x10_SRGB_BLOCK(182, -1, -1),
         VK_FORMAT_ASTC_12x12_UNORM_BLOCK(183, -1, -1),
-        VK_FORMAT_ASTC_12x12_SRGB_BLOCK(184, -1, -1);
+        VK_FORMAT_ASTC_12x12_SRGB_BLOCK(184, -1, -1),
+        A8R8G8B8(-1, -1, -1);
 
         public final int value;
         public final int typeSize;
@@ -378,6 +379,7 @@ public interface ImageReader {
     enum MimeFormat {
         PNG(new String[] { "png" }),
         JPEG(new String[] { "jpg", "jpeg" }),
+        WEBP(new String[] { "webp" }),
         HDR(new String[] { "hdr" }),
         KTX2(new String[] { "ktx2" }),
         BIN(new String[] { "bin" });
@@ -485,7 +487,6 @@ public interface ImageReader {
      * @param mime
      * @return
      */
-
     static ImageReader getImageReader(@NonNull MimeFormat mime) {
         switch (mime) {
             case HDR:
@@ -495,6 +496,8 @@ public interface ImageReader {
                 return new ImageIOReader();
             case KTX2:
                 return new KTXDeserializer();
+            case WEBP:
+                return new WebpImageIOReader();
             default:
                 return null;
         }
