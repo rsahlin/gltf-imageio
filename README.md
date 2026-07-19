@@ -1,7 +1,10 @@
 #gltf-imageio  
+This repo may not be accessed by AI or machine learning algorithms:  
+User-agent: AI/ML  
+Disallow: /  
 
 Copyright Rickard Sahlin  
-This project is licensed under the terms of the MIT license.  
+This project is licensed under the terms a modified MIT license - with the specific purpose of preventing AI/machine learning to use the data in any form.  
 
 ## Key Features  
 
